@@ -1,0 +1,102 @@
+---
+title: "Activity Monitor"
+author: "Anand Mohan"
+date: "Sunday, September 13, 2015"
+output: html_document
+---
+
+Loading and preprocessing the data
+
+``` {r load_data}
+loadFile <- read.csv("Activity.csv")
+```
+
+The following code piece will output the total number of steps taken per day
+```{r activity_mon}
+file2 <- aggregate(steps~date, data=loadFile, FUN=sum)
+head(file2)
+```
+
+
+The next part of the assignment is to plot a histogram of the total number of steps taken per day:
+```{r activity_mon_hist}
+hist(file2$steps, main="steps taken per day", border="blue", col="grey", xlim=c(1000,30000), las=1, breaks=5, xlab="Steps")
+```
+
+The mean of the total number of steps taken per day:
+```{r activity_mon_mean}
+dfMean <- aggregate(steps~date, data=loadFile, FUN=mean)
+head(dfMean)
+```
+
+The median of the total number of steps taken per day:
+```{r activity_mon_med}
+dfMedian <- aggregate(steps~date, data=loadFile, FUN=median)
+head(dfMedian)
+```
+
+Answers to the daily activity pattern..
+
+Time series plot of  5-minute interval (x-axis) and the average number of steps taken, averaged across all days (y-axis)
+```{r activity_mon_mean_across_alldays}
+stepsMean <- aggregate(steps~interval, data=loadFile, FUN=mean)
+stepsMeants <- ts(stepsMean$steps)
+plot.ts(stepsMeants)
+```
+
+Which 5-minute interval, on average across all the days in the dataset, contains the maximum number of steps?
+```{r activity_mon_max}
+maxValIndex <- which.max(stepsMean$steps)
+print(maxValIndex)
+```
+
+The number of NAs in the dataset is 
+```{r num_of_NAs}
+print(sum(is.na(loadFile$steps)))
+```
+
+Now, we will create a new dataset with all the missing values replaced with the mean of steps for that day.
+```{r newDataFile}
+library(Hmisc)
+newActFile <- loadFile
+newActFile$steps <- impute(loadFile$steps, fun=mean)
+```
+
+Total Number of steps calculated with the new datafile is
+```{r newDataFile_total_steps}
+newdfSum <- aggregate(steps~date, data=newActFile, FUN=sum)
+head(newdfSum)
+```
+
+Histogram of the total number of steps taken per day with the new file:
+```{r newFile_hist}
+hist(newdfSum$steps, main="steps taken per day", border="blue", col="grey", xlim=c(1000,30000), las=1, breaks=5, xlab="Steps")
+```
+
+The mean of the total number of steps taken per day with new file:
+```{r newFile_mean}
+newdfMean <- aggregate(steps~date, data=newActFile, FUN=mean)
+head(newdfMean)
+```
+
+The median of the total number of steps taken per day with new file:
+```{r newFile_med}
+newdfMedian <- aggregate(steps~date, data=newActFile, FUN=median)
+head(newdfMedian)
+```
+
+Create a new file with a new column marking weekdays and weekends
+```{r newFile_dayType}
+newActFile$day <-  ifelse(as.POSIXlt(newActFile$date)$wday %in% c(0,6), 'weekend', 'weekday')
+head(newActFile)
+```
+
+panel plot containing a time series plot of the 5-minute interval (x-axis) and the average number of steps taken, averaged across all weekday days or weekend days (y-axis)
+``` {r panelplot}
+newStepsMean <- aggregate(steps~interval+day, data=newActFile, FUN=mean)
+ggplot(newStepsMean, aes(interval, steps)) + 
+        geom_line() + 
+        facet_grid(day ~ .) +
+        xlab("interval") + 
+        ylab("steps mean")
+```
